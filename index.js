@@ -3,36 +3,39 @@ const { clearIntervalAsync } = require('set-interval-async')
 const Discord = require("discord.js");
 const axios = require("axios");
 const bot = new Discord.Client();
-const token = "NjcyNDIyOTE1ODE5NDM4MDkw.Xj2nyg.LrahXaqQxR6dWqVd_bJ2at7vSQw";
+const token = ""; //Discord API token
 let users = {};
+// Twitch.tv API Request values
 const config = (parameters) => ({
     headers: {
-        "Client-ID": "bjlmow5mea7iv1259wusa7kq1kk9hx"
+        "Client-ID": "" //Twitch.tv API token
     },
-    params: parameters
+    params: parameters //Twitch.tv streams to be checked
 });
+// Reddit API Request values
 const postConfig = {
     headers: {
         Authorization: "Bearer"
     },
     params: {
-        limit: "5"
+        limit: "5" // Amount of new posts to search from subreddit
     }
 }
 
 class User {
     constructor(channel) {
-        this.streams = {};
-        this.channel = channel;
-        this.on = false;
-        this.posts = {};
-        this.sentDeals = [];
-        this.intervalId;
+        this.streams = {}; // Currently tracked Twitch.tv streams with stream names as keys and a string that's either "online" or "offline"
+        this.channel = channel; // User's Discord chat channel
+        this.on = false; // Tracks whether the tracker is on or off
+        this.posts = {}; // Reddit posts object with subreddits as keys and an array of terms for values
+        this.sentDeals = []; // Holds previously sent Reddit posts for 24hrs
+        this.intervalId; // Interval ID for tracker
         this.dealsInterval = setInterval(() => {
             this.sentDeals = []
-        }, 86400000)
+        }, 86400000) // Clears the previously sent Reddit messages every 24hrs
     }
 
+    // Runs the tracker for Reddit and Twitch to check new subreddit posts for the tracked terms and check tracked streams to see if they're online or offline
     checkThings() {
         if (Object.keys(this.posts).length === 0 && Object.keys(this.streams).length === 0) {
             this.channel.send("Tracker deactivated due to nothing being tracked");
@@ -49,6 +52,7 @@ class User {
         };
     }
 
+    // Add a subreddit + search term to track within the new posts of that subreddit
     async addSearch(info) {
         const subreddit = info[0].toLowerCase();
         const term = info[1].toLowerCase();
@@ -71,6 +75,7 @@ class User {
         };
     }
 
+    // Remove a subreddit search term or subreddit to search from
     async removeSearch(info) {
         const subreddit = info[0].toLowerCase();
         const term = info[1].toLowerCase();
@@ -92,6 +97,7 @@ class User {
         };
     }
 
+    // Check subreddit's newest posts to see if any of the titles contain a tracked term
     async trackPosts() {
         for (let subreddit of Object.keys(this.posts)) {
             let response = await axios.get(`http://oauth.reddit.com/r/${subreddit}/new.json`, postConfig);
@@ -110,6 +116,7 @@ class User {
         }
     }
 
+    // Adds a stream to be tracked
     async addStream(stream) {
         let newStream = [];
         
@@ -146,6 +153,7 @@ class User {
         }
     }
 
+    // Remove a tracked stream
     removeStream(stream) {
         for (let s of stream) {
             if (!Object.keys(this.streams).includes(s.toLowerCase())) {
@@ -160,6 +168,7 @@ class User {
         }
     }
 
+    // Check to see if a stream is live, if the stream was previously offline, a notification will be sent to the chat channel
     async checkStreams() {
         const liveParam = {
             "user_login": Object.keys(this.streams)
@@ -187,6 +196,7 @@ class User {
         };
     }
 
+    // Activate the tracker
     activate() {
         if (Object.keys(this.streams).length === 0) {
             this.channel.send('Please add streams first before activating');
@@ -201,6 +211,7 @@ class User {
         };
     }
 
+    // Deactivate the tracker
     deactivate() {
         if (this.on === true) {
             this.channel.send('Tracker deactivated');
@@ -215,6 +226,7 @@ class User {
 
 bot.login(token);
 
+// Activates bot and allows it to receive text commands
 bot.on("message", async (msg) => {
     if (msg.author.username != "Stream Tracker") {
         const author = msg.author.id;
