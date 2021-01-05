@@ -9,7 +9,7 @@
   "author": "Alex",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "discord.js": "^11.5.1",
     "set-interval-async": "1.0.30"
   }
